@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>賣方稅費試算工具</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0f14;
+    --surface: #151921;
+    --surface2: #1c2230;
+    --border: #2a3144;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59, 130, 246, 0.15);
+    --accent2: #f59e0b;
+    --green: #10b981;
+    --red: #ef4444;
+    --text: #e8ecf4;
+    --text2: #8b95a8;
+    --text3: #5a6478;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 520px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #e8ecf4 0%, #8b95a8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .header p {
+    font-size: 13px;
+    color: var(--text3);
+    margin-top: 6px;
+    font-weight: 300;
+  }
+
+  /* Tab nav */
+  .step-nav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 18px;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .step-tab {
+    flex: 1;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text3);
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .step-tab.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  }
+
+  .step-tab .num {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    opacity: 0.6;
+    margin-bottom: 2px;
+  }
+
+  /* Sections */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::before {
+    content: '';
+    width: 4px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .section-title.orange { color: var(--accent2); }
+  .section-title.orange::before { background: var(--accent2); }
+
+  /* Form */
+  .form-row { margin-bottom: 14px; }
+  .form-row:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+
+  label .hint {
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 300;
+    margin-left: 4px;
+  }
+
+  input[type="number"], select {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  select {
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b95a8'%3E%3Cpath d='M6 8.5L1 3.5h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  select option { background: var(--surface2); color: var(--text); }
+
+  .inline-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .inline-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+
+  .toggle-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+
+  .toggle-label small {
+    display: block;
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 300;
+    margin-top: 2px;
+  }
+
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .toggle input { display: none; }
+
+  .toggle .slider {
+    position: absolute;
+    inset: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: 0.25s;
+  }
+
+  .toggle .slider::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: var(--text3);
+    border-radius: 50%;
+    transition: 0.25s;
+  }
+
+  .toggle input:checked + .slider {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .toggle input:checked + .slider::after {
+    transform: translateX(20px);
+    background: #fff;
+  }
+
+  /* Auto computed box */
+  .computed-box {
+    background: rgba(59,130,246,0.06);
+    border: 1px dashed rgba(59,130,246,0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 14px;
+  }
+
+  .computed-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+  }
+
+  .computed-row .clabel {
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .computed-row .cval {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .computed-row.highlight .cval {
+    font-size: 16px;
+    color: var(--accent2);
+  }
+
+  .computed-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+
+  /* Buttons */
+  .calc-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #2563eb);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Noto Sans TC', sans-serif;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+    margin-bottom: 14px;
+  }
+
+  .calc-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(59, 130, 246, 0.4);
+  }
+
+  .calc-btn:active { transform: translateY(0); }
+
+  /* Results */
+  .results { display: none; animation: slideUp 0.35s ease; }
+  .results.show { display: block; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-hero {
+    background: linear-gradient(135deg, #1a2540 0%, #15202e 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--green), var(--accent2));
+  }
+
+  .result-hero .label {
+    font-size: 12px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .result-hero .amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+
+  .result-hero .amount .unit {
+    font-size: 16px;
+    color: var(--text2);
+    margin-left: 4px;
+  }
+
+  .result-hero .sub {
+    font-size: 13px;
+    color: var(--text3);
+    margin-top: 6px;
+  }
+
+  .breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .breakdown-item:last-child { border-bottom: none; }
+
+  .breakdown-item .name { font-size: 14px; font-weight: 500; }
+  .breakdown-item .desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .breakdown-item .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .val.tax { color: var(--red); }
+  .val.income { color: var(--green); }
+
+  .net-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.03));
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 12px;
+    margin-top: 14px;
+  }
+
+  .net-bar .name { font-size: 15px; font-weight: 700; color: var(--green); }
+  .net-bar .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--green);
+  }
+
+  .rate-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: 6px;
+  }
+
+  .rate-badge.high { background: rgba(239,68,68,0.12); color: var(--red); }
+  .rate-badge.mid { background: rgba(245,158,11,0.12); color: var(--accent2); }
+  .rate-badge.low { background: rgba(16,185,129,0.12); color: var(--green); }
+
+  /* Formula breakdown */
+  .formula-box {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text3);
+    line-height: 2;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .formula-box .fl {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .formula-box .fl .fval { color: var(--text); font-weight: 600; }
+  .formula-box .fl.total { color: var(--accent2); font-weight: 600; }
+  .formula-box .fl.total .fval { color: var(--accent2); }
+  .formula-box .fdivider {
+    border-top: 1px dashed var(--border);
+    margin: 4px 0;
+  }
+
+  .disclaimer {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    margin-top: 20px;
+    line-height: 1.7;
+    padding: 0 10px;
+  }
+
+  /* Panel visibility */
+  .panel { display: none; }
+  .panel.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>賣方稅費試算</h1>
+    <p>房地合一 2.0 ＋ 土地增值稅 ｜ 一站搞定</p>
+  </div>
+
+  <!-- Step Nav -->
+  <div class="step-nav">
+    <div class="step-tab active" onclick="showPanel(0)">
+      <span class="num">01</span>土增稅
+    </div>
+    <div class="step-tab" onclick="showPanel(1)">
+      <span class="num">02</span>房地合一
+    </div>
+    <div class="step-tab" onclick="showPanel(2)">
+      <span class="num">03</span>試算結果
+    </div>
+  </div>
+
+  <!-- Panel 0: 土地增值稅 -->
+  <div class="panel active" id="panel0">
+    <div class="section">
+      <div class="section-title orange">土地資料（從謄本或地政系統取得）</div>
+      <div class="inline-row" style="margin-bottom:14px">
+        <div class="form-row">
+          <label>公告現值 <span class="hint">元/m²</span></label>
+          <input type="number" id="landCurrentValue" placeholder="185,000">
+        </div>
+        <div class="form-row">
+          <label>登記面積 <span class="hint">m²</span></label>
+          <input type="number" id="landArea" placeholder="66.5" step="0.01">
+        </div>
+      </div>
+      <div class="inline-row" style="margin-bottom:14px">
+        <div class="form-row">
+          <label>前次移轉現值 <span class="hint">元/m²</span></label>
+          <input type="number" id="prevTransferValue" placeholder="137,000">
+        </div>
+        <div class="form-row">
+          <label>物價指數</label>
+          <input type="number" id="priceIndex" placeholder="112.1" step="0.1">
+        </div>
+      </div>
+      <div class="inline-row">
+        <div class="form-row">
+          <label>持分</label>
+          <select id="shareType">
+            <option value="fraction">分數</option>
+            <option value="full">全部（1/1）</option>
+          </select>
+        </div>
+        <div class="form-row" id="fractionInputs">
+          <label>分子 / 分母</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="number" id="shareNum" placeholder="1" style="flex:1" min="1">
+            <span style="color:var(--text3);font-size:18px">/</span>
+            <input type="number" id="shareDen" placeholder="4" style="flex:1" min="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-label">
+          土增稅自用住宅稅率
+          <small>一生一次 10% 優惠</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="landSelfUse">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Auto-computed -->
+      <div class="computed-box" id="landComputed" style="display:none">
+        <div class="computed-row">
+          <span class="clabel">申報移轉現值</span>
+          <span class="cval" id="c_transferTotal">-</span>
+        </div>
+        <div class="computed-row">
+          <span class="clabel">前次調整地價</span>
+          <span class="cval" id="c_adjustedPrev">-</span>
+        </div>
+        <div class="computed-divider"></div>
+        <div class="computed-row">
+          <span class="clabel">土地漲價總數額</span>
+          <span class="cval" id="c_landIncrease">-</span>
+        </div>
+        <div class="computed-row">
+          <span class="clabel">漲價倍數</span>
+          <span class="cval" id="c_ratio">-</span>
+        </div>
+        <div class="computed-divider"></div>
+        <div class="computed-row highlight">
+          <span class="clabel">🧾 土地增值稅</span>
+          <span class="cval" id="c_landTax">-</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calcLandTax(); showPanel(1);">計算土增稅 → 下一步</button>
+  </div>
+
+  <!-- Panel 1: 房地合一稅 -->
+  <div class="panel" id="panel1">
+    <div class="section">
+      <div class="section-title">交易資訊</div>
+      <div class="form-row">
+        <label>成交價 <span class="hint">（萬元）</span></label>
+        <input type="number" id="sellPrice" placeholder="例：2000">
+      </div>
+      <div class="form-row">
+        <label>取得成本 <span class="hint">（萬元，買入總價＋契稅規費等）</span></label>
+        <input type="number" id="buyCost" placeholder="例：1500">
+      </div>
+      <div class="form-row">
+        <label>相關費用 <span class="hint">（萬元，仲介費、代書費等）</span></label>
+        <div class="toggle-row" style="margin-top:0;border-top:none;padding-top:0;padding-bottom:8px">
+          <div class="toggle-label">
+            無單據，以成交價 3% 設算
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="useDefaultExp" onchange="toggleExpInput()">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <input type="number" id="expenses" placeholder="例：80">
+        <div id="expAutoVal" style="display:none;font-size:13px;color:var(--accent2);margin-top:6px;font-family:'JetBrains Mono',monospace;font-weight:600"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">持有條件</div>
+      <div class="form-row">
+        <label>持有期間</label>
+        <select id="holdPeriod">
+          <option value="2y">2 年以內（45%）</option>
+          <option value="5y">超過 2 年～5 年（35%）</option>
+          <option value="10y" selected>超過 5 年～10 年（20%）</option>
+          <option value="10yplus">超過 10 年（15%）</option>
+        </select>
+      </div>
+      <div class="toggle-row" style="margin-top:0;border-top:none">
+        <div class="toggle-label">
+          房地合一自住優惠
+          <small>設籍自住滿 6 年、400 萬免稅、超過 10%</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="selfUse">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title orange">土增稅帶入值</div>
+      <div class="inline-row">
+        <div class="form-row">
+          <label>土地漲價總數額 <span class="hint">（萬元）</span></label>
+          <input type="number" id="landIncreaseInput" placeholder="自動帶入">
+        </div>
+        <div class="form-row">
+          <label>土地增值稅 <span class="hint">（萬元）</span></label>
+          <input type="number" id="landTaxInput" placeholder="自動帶入">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;">
+        ⬆ 已從第一步自動帶入，也可手動修改
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calcFinal()">💰 計算總稅費</button>
+  </div>
+
+  <!-- Panel 2: Results -->
+  <div class="panel" id="panel2">
+    <div class="results show" id="results">
+      <div class="result-hero">
+        <div class="label">預估總稅費</div>
+        <div class="amount" id="totalTax">-<span class="unit">萬元</span></div>
+        <div class="sub" id="taxPercent"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">稅費明細</div>
+        <div class="breakdown-item">
+          <div>
+            <div class="name">房地合一稅</div>
+            <div class="desc" id="rateDesc">-</div>
+          </div>
+          <div class="val tax" id="incomeTaxVal">-</div>
+        </div>
+        <div id="formulaContainer"></div>
+        <div class="breakdown-item">
+          <div>
+            <div class="name">土地增值稅</div>
+            <div class="desc" id="landTaxDesc">-</div>
+          </div>
+          <div class="val tax" id="landTaxVal">-</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">收益分析</div>
+        <div class="breakdown-item">
+          <div><div class="name">成交價</div></div>
+          <div class="val" style="color:var(--text)" id="r_sell">-</div>
+        </div>
+        <div class="breakdown-item">
+          <div><div class="name">取得成本</div></div>
+          <div class="val" style="color:var(--text)" id="r_cost">-</div>
+        </div>
+        <div class="breakdown-item">
+          <div><div class="name">相關費用</div></div>
+          <div class="val" style="color:var(--text)" id="r_exp">-</div>
+        </div>
+        <div class="breakdown-item">
+          <div><div class="name">交易獲利</div></div>
+          <div class="val income" id="r_profit">-</div>
+        </div>
+        <div class="breakdown-item">
+          <div><div class="name">課稅所得</div></div>
+          <div class="val" style="color:var(--text)" id="r_taxable">-</div>
+        </div>
+        <div class="net-bar">
+          <div class="name">預估淨收入</div>
+          <div class="val" id="netVal">-</div>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        ⚠️ 本工具僅供試算參考，實際稅額以稅捐機關核定為準<br>
+        房地合一稅應於移轉登記後 30 日內申報
+      </div>
+
+      <button class="calc-btn" style="margin-top:18px;background:linear-gradient(135deg,var(--surface2),var(--surface));color:var(--text2);box-shadow:none;border:1px solid var(--border)" onclick="showPanel(0)">← 重新試算</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- Helpers ---
+function fmtNum(n) { return Math.round(n).toLocaleString('zh-TW'); }
+function fmtWan(n) { return (Math.round(n * 10) / 10).toLocaleString('zh-TW'); }
+
+// --- Panel navigation ---
+function showPanel(idx) {
+  document.querySelectorAll('.panel').forEach((p, i) => {
+    p.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.step-tab').forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// --- Share type toggle ---
+document.getElementById('shareType').addEventListener('change', function() {
+  document.getElementById('fractionInputs').style.display =
+    this.value === 'full' ? 'none' : 'block';
+});
+
+// --- Get share as decimal ---
+function getShare() {
+  if (document.getElementById('shareType').value === 'full') return 1;
+  const num = parseFloat(document.getElementById('shareNum').value) || 1;
+  const den = parseFloat(document.getElementById('shareDen').value) || 1;
+  return num / den;
+}
+
+// --- Auto-compute land tax on input ---
+const landInputs = ['landCurrentValue','landArea','prevTransferValue','priceIndex','shareNum','shareDen','shareType','landSelfUse'];
+landInputs.forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', autoCalcLand);
+  if (el) el.addEventListener('change', autoCalcLand);
+});
+
+function autoCalcLand() {
+  const cv = parseFloat(document.getElementById('landCurrentValue').value);
+  const area = parseFloat(document.getElementById('landArea').value);
+  const prev = parseFloat(document.getElementById('prevTransferValue').value);
+  const idx = parseFloat(document.getElementById('priceIndex').value);
+  const share = getShare();
+
+  const box = document.getElementById('landComputed');
+
+  if (!cv || !area || !prev || !idx) {
+    box.style.display = 'none';
+    return;
+  }
+
+  box.style.display = 'block';
+
+  const transferTotal = cv * area;
+  const adjustedPrev = prev * idx / 100;
+  const adjustedTotal = adjustedPrev * area;
+  const landIncrease = Math.max((transferTotal - adjustedTotal) * share, 0);
+  const baseValue = adjustedTotal * share;
+
+  // 漲價倍數
+  const ratio = baseValue > 0 ? landIncrease / baseValue : 0;
+
+  const isSelfUse = document.getElementById('landSelfUse').checked;
+  let landTax = 0;
+
+  if (isSelfUse) {
+    landTax = landIncrease * 0.1;
+  } else {
+    // 累進稅率
+    if (ratio <= 1) {
+      landTax = landIncrease * 0.2;
+    } else if (ratio <= 2) {
+      const tier1 = baseValue * 0.2;
+      const tier2 = (landIncrease - baseValue) * 0.3;
+      landTax = tier1 + tier2;
+    } else {
+      const tier1 = baseValue * 0.2;
+      const tier2 = baseValue * 0.3;
+      const tier3 = (landIncrease - baseValue * 2) * 0.4;
+      landTax = tier1 + tier2 + tier3;
+    }
+  }
+
+  document.getElementById('c_transferTotal').textContent = fmtNum(transferTotal) + ' 元';
+  document.getElementById('c_adjustedPrev').textContent = fmtNum(Math.round(adjustedTotal)) + ' 元';
+  document.getElementById('c_landIncrease').textContent = fmtNum(Math.round(landIncrease * 100) / 100) + ' 元';
+  document.getElementById('c_ratio').textContent = (Math.round(ratio * 1000) / 10) + '%';
+  document.getElementById('c_landTax').textContent = fmtNum(Math.round(landTax * 100) / 100) + ' 元';
+
+  // Store for carry-over
+  window._landData = { landIncrease, landTax };
+}
+
+// --- Step 1 button ---
+function calcLandTax() {
+  autoCalcLand();
+  if (window._landData) {
+    document.getElementById('landIncreaseInput').value = (Math.round(window._landData.landIncrease / 100) / 100).toFixed(2);
+    document.getElementById('landTaxInput').value = (Math.round(window._landData.landTax / 100) / 100).toFixed(2);
+  }
+}
+
+// --- Final calculation ---
+function calcFinal() {
+  const sellPrice = parseFloat(document.getElementById('sellPrice').value) || 0;
+  const buyCost = parseFloat(document.getElementById('buyCost').value) || 0;
+  const useDefault = document.getElementById('useDefaultExp').checked;
+  let expenses = useDefault ? sellPrice * 0.03 : (parseFloat(document.getElementById('expenses').value) || 0);
+
+  const landIncrease = parseFloat(document.getElementById('landIncreaseInput').value) || 0;
+  const landTax = parseFloat(document.getElementById('landTaxInput').value) || 0;
+  const holdPeriod = document.getElementById('holdPeriod').value;
+  const selfUse = document.getElementById('selfUse').checked;
+
+  const profit = sellPrice - buyCost - expenses;
+  let taxableIncome = Math.max(profit - landIncrease, 0);
+
+  let rate, rateLabel, badgeCls;
+  if (selfUse) {
+    rate = 0.10;
+    rateLabel = '自住優惠 10%（400萬免稅）';
+    badgeCls = 'low';
+  } else {
+    switch (holdPeriod) {
+      case '2y': rate = 0.45; rateLabel = '持有 2 年內'; badgeCls = 'high'; break;
+      case '5y': rate = 0.35; rateLabel = '持有 2～5 年'; badgeCls = 'high'; break;
+      case '10y': rate = 0.20; rateLabel = '持有 5～10 年'; badgeCls = 'mid'; break;
+      case '10yplus': rate = 0.15; rateLabel = '持有逾 10 年'; badgeCls = 'low'; break;
+    }
+  }
+
+  let incomeTax = 0;
+  if (selfUse) {
+    incomeTax = Math.max(taxableIncome - 400, 0) * rate;
+  } else {
+    incomeTax = taxableIncome * rate;
+  }
+
+  const totalTaxAmt = incomeTax + landTax;
+  const net = sellPrice - buyCost - expenses - incomeTax - landTax;
+
+  // Show panel 2
+  showPanel(2);
+
+  // Fill results
+  document.getElementById('totalTax').innerHTML = fmtWan(totalTaxAmt) + '<span class="unit">萬元</span>';
+  const pct = sellPrice > 0 ? ((totalTaxAmt / sellPrice) * 100).toFixed(1) : 0;
+  document.getElementById('taxPercent').textContent = '佔成交價 ' + pct + '%';
+
+  document.getElementById('incomeTaxVal').textContent = fmtWan(incomeTax) + ' 萬';
+  document.getElementById('rateDesc').innerHTML = rateLabel + ' <span class="rate-badge ' + badgeCls + '">' + (rate * 100) + '%</span>';
+
+  document.getElementById('landTaxVal').textContent = fmtWan(landTax) + ' 萬';
+  document.getElementById('landTaxDesc').textContent = document.getElementById('landSelfUse').checked ? '自用住宅 10%' : '一般累進稅率';
+
+  // Formula breakdown
+  const expLabel = useDefault ? '設算費用（3%）' : '相關費用';
+  document.getElementById('formulaContainer').innerHTML = `
+    <div class="formula-box">
+      <div class="fl"><span>成交價</span><span class="fval">${fmtWan(sellPrice)} 萬</span></div>
+      <div class="fl"><span>− 取得成本</span><span class="fval">${fmtWan(buyCost)} 萬</span></div>
+      <div class="fl"><span>− ${expLabel}</span><span class="fval">${fmtWan(expenses)} 萬</span></div>
+      <div class="fl"><span>− 土地漲價總數額</span><span class="fval">${fmtWan(landIncrease)} 萬</span></div>
+      <div class="fdivider"></div>
+      <div class="fl"><span>＝ 課稅所得</span><span class="fval">${fmtWan(taxableIncome)} 萬</span></div>
+      <div class="fl"><span>× 稅率</span><span class="fval">${(rate * 100)}%</span></div>
+      ${selfUse && taxableIncome > 0 ? `<div class="fl"><span>− 免稅額</span><span class="fval">400 萬</span></div>` : ''}
+      <div class="fdivider"></div>
+      <div class="fl total"><span>＝ 房地合一稅</span><span class="fval">${fmtWan(incomeTax)} 萬</span></div>
+    </div>
+  `;
+
+  document.getElementById('r_sell').textContent = fmtWan(sellPrice) + ' 萬';
+  document.getElementById('r_cost').textContent = fmtWan(buyCost) + ' 萬';
+  document.getElementById('r_exp').textContent = fmtWan(expenses) + ' 萬' + (useDefault ? '（3%設算）' : '');
+  document.getElementById('r_profit').textContent = fmtWan(profit) + ' 萬';
+  document.getElementById('r_taxable').textContent = fmtWan(taxableIncome) + ' 萬';
+  document.getElementById('netVal').textContent = fmtWan(net) + ' 萬';
+}
+
+function toggleExpInput() {
+  const on = document.getElementById('useDefaultExp').checked;
+  const input = document.getElementById('expenses');
+  const autoVal = document.getElementById('expAutoVal');
+  if (on) {
+    input.style.display = 'none';
+    autoVal.style.display = 'block';
+    updateExpAuto();
+  } else {
+    input.style.display = 'block';
+    autoVal.style.display = 'none';
+  }
+}
+
+function updateExpAuto() {
+  const sell = parseFloat(document.getElementById('sellPrice').value) || 0;
+  const val = sell * 0.03;
+  document.getElementById('expAutoVal').textContent = '＝ ' + fmtWan(val) + ' 萬（成交價 × 3%）';
+}
+
+document.getElementById('sellPrice').addEventListener('input', function() {
+  if (document.getElementById('useDefaultExp').checked) updateExpAuto();
+});
+</script>
+</body>
+</html>
